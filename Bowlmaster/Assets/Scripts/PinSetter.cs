@@ -7,63 +7,42 @@ using UnityEngine.UI;
 
 public class PinSetter : MonoBehaviour 
 {
-  public Text PinCountLabel;
-  public int LastStandingCount = -1;
   public GameObject PinSet;
 
-  private Ball _ball;
   private Animator _animator;
-  private ActionMaster _actionMaster;
-  private bool _ballLeftBox;
-  private float _lastChangeTime;
-  private int _lastSettledCount = 10;
+  //private ActionMaster _actionMaster;
+  private PinCounter _pinCounter;
 
   // Use this for initialization
   void Start () 
   {
-    _ball = FindObjectOfType<Ball>();
     _animator = GetComponent<Animator>();
-    _actionMaster = new ActionMaster();
-
-    _ballLeftBox = false;
+    //_actionMaster = new ActionMaster();
+    _pinCounter = FindObjectOfType<PinCounter>();
   }
 
   // Update is called once per frame
   void Update () 
   {
-    if (_ballLeftBox)
+
+  }
+
+  public void PerformAction(Action action)
+  {
+    switch (action)
     {
-      PinCountLabel.text = CountStanding().ToString();
-      CheckPinsStanding();
+      case Action.Tidy:
+        TidyPins();
+        break;
+      case Action.Reset:
+      case Action.EndTurn:
+        ResetPins();
+        break;
+      case Action.EndGame:
+        break;
+      default:
+        break;
     }
-  }
-
-  void OnTriggerEnter(Collider collider)
-  {
-    //if (collider.gameObject.GetComponent<Ball>())
-    //{
-    //  _ballLeftBox = true;
-    //  PinCountLabel.color = Color.red;
-    //}
-  }
-
-  public void BallLeftBox()
-  {
-    _ballLeftBox = true;
-    PinCountLabel.color = Color.red;
-  }
-
-  public int CountStanding()
-  {
-    var currentStandingPinCount = 0;
-    var bowlingPins = GameObject.FindObjectsOfType<Pin>();
-    foreach (var bowlingPin in bowlingPins)
-    {
-      if (bowlingPin.IsStanding())
-        currentStandingPinCount++;
-    }
-
-    return currentStandingPinCount;
   }
 
   public void TidyPins()
@@ -75,7 +54,7 @@ public class PinSetter : MonoBehaviour
   public void ResetPins()
   {
     _animator.SetTrigger("Reset Trigger");
-    _lastSettledCount = 10;
+    _pinCounter.Reset();
   }
 
   public void RaisePins()
@@ -103,50 +82,5 @@ public class PinSetter : MonoBehaviour
   {
     var pins = FindObjectsOfType<Pin>().Where(p => p.IsStanding()).ToList();
     return pins;
-  }
-
-  private void CheckPinsStanding()
-  {
-    var tempPinCount = CountStanding();
-    if (tempPinCount != LastStandingCount)
-    {
-      LastStandingCount = tempPinCount;
-      _lastChangeTime = Time.time;
-    }
-
-    if (Time.time - _lastChangeTime > 3f)
-    {
-      PinsHaveSettled();
-    }
-  }
-
-  private void UpdateScore()
-  {
-    var fallenPins = _lastSettledCount - LastStandingCount;
-    _lastSettledCount = LastStandingCount;
-    var action = _actionMaster.Bowl(fallenPins);
-    switch (action)
-    {
-      case Action.Tidy:
-        TidyPins();
-        break;
-      case Action.Reset:
-      case Action.EndTurn:
-        ResetPins();
-        break;
-      case Action.EndGame:
-        break;
-      default:
-        break;
-    }
-  }
-
-  private void PinsHaveSettled()
-  {
-    _ball.Reset();
-    PinCountLabel.color = Color.green;
-    _ballLeftBox = false;
-    UpdateScore();
-    LastStandingCount = -1;
   }
 }
